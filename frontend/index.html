@@ -1,26 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Store Intelligence Dashboard</title>
+    <title>Store Intelligence Dashboard</title>
 
-<style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-body{
-    font-family:Arial;
-    background:#f4f4f4;
-    padding:20px;
-}
+    <style>
 
-.card{
-    background:white;
-    padding:20px;
-    margin:10px;
-    width:250px;
-    display:inline-block;
-    border-radius:10px;
-}
+        body{
+            font-family: Arial;
+            background:#f4f4f4;
+            padding:20px;
+        }
 
-</style>
+        .card{
+            background:white;
+            padding:20px;
+            margin:10px;
+            width:220px;
+            display:inline-block;
+            border-radius:10px;
+            box-shadow:0px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        table{
+            width:100%;
+            background:white;
+            border-collapse:collapse;
+            margin-top:20px;
+        }
+
+        th,td{
+            border:1px solid #ddd;
+            padding:10px;
+        }
+
+        th{
+            background:#eee;
+        }
+
+        canvas{
+            background:white;
+            margin-top:20px;
+            padding:20px;
+            border-radius:10px;
+        }
+
+    </style>
 
 </head>
 
@@ -48,48 +74,133 @@ body{
     <h1 id="health">...</h1>
 </div>
 
+<h2>Occupancy Trend</h2>
+
+<canvas id="chart"></canvas>
+
+<h2>Recent Events</h2>
+
+<table>
+
+<thead>
+<tr>
+    <th>Customer ID</th>
+    <th>Event</th>
+    <th>Timestamp</th>
+</tr>
+</thead>
+
+<tbody id="eventsTable">
+
+</tbody>
+
+</table>
+
 <script>
 
-async function loadData(){
+let occupancyHistory = [];
+let labels = [];
 
-    let metrics =
+const chart = new Chart(
+    document.getElementById("chart"),
+    {
+        type:"line",
+        data:{
+            labels:labels,
+            datasets:[
+                {
+                    label:"Occupancy",
+                    data:occupancyHistory
+                }
+            ]
+        }
+    }
+);
+
+async function loadDashboard(){
+
+    const metricsResponse =
     await fetch(
         "http://127.0.0.1:8000/metrics"
     );
 
-    let metricsData =
-    await metrics.json();
+    const metrics =
+    await metricsResponse.json();
 
     document.getElementById(
         "customers"
     ).innerText =
-    metricsData.total_customers;
+    metrics.total_customers;
 
     document.getElementById(
         "events"
     ).innerText =
-    metricsData.total_events;
+    metrics.total_events;
 
     document.getElementById(
         "occupancy"
     ).innerText =
-    metricsData.occupancy;
+    metrics.occupancy;
 
-    let health =
+    occupancyHistory.push(
+        metrics.occupancy
+    );
+
+    labels.push(
+        new Date().toLocaleTimeString()
+    );
+
+    chart.update();
+
+    const healthResponse =
     await fetch(
         "http://127.0.0.1:8000/health"
     );
 
-    let healthData =
-    await health.json();
+    const health =
+    await healthResponse.json();
 
     document.getElementById(
         "health"
     ).innerText =
-    healthData.status;
+    health.status;
+
+    const eventsResponse =
+    await fetch(
+        "http://127.0.0.1:8000/events"
+    );
+
+    const events =
+    await eventsResponse.json();
+
+    let html = "";
+
+    events.reverse().forEach(
+        event => {
+
+            html += `
+            <tr>
+                <td>${event.customer_id}</td>
+                <td>${event.event_type}</td>
+                <td>${event.timestamp}</td>
+            </tr>
+            `;
+        }
+    );
+
+    document.getElementById(
+        "eventsTable"
+    ).innerHTML =
+    html;
+
 }
 
-loadData();
+loadDashboard();
+
+setInterval(
+    loadDashboard,
+    5000
+);
 
 </script>
 
