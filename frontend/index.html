@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Store Intelligence Dashboard</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f4f4f4;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin:10px;
+    width:250px;
+    display:inline-block;
+    border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Store Intelligence Dashboard</h1>
+
+<div class="card">
+    <h3>Total Customers</h3>
+    <h1 id="customers">0</h1>
+</div>
+
+<div class="card">
+    <h3>Total Events</h3>
+    <h1 id="events">0</h1>
+</div>
+
+<div class="card">
+    <h3>Occupancy</h3>
+    <h1 id="occupancy">0</h1>
+</div>
+
+<div class="card">
+    <h3>System Health</h3>
+    <h1 id="health">...</h1>
+</div>
+
+<script>
+
+async function loadData(){
+
+    let metrics =
+    await fetch(
+        "http://127.0.0.1:8000/metrics"
+    );
+
+    let metricsData =
+    await metrics.json();
+
+    document.getElementById(
+        "customers"
+    ).innerText =
+    metricsData.total_customers;
+
+    document.getElementById(
+        "events"
+    ).innerText =
+    metricsData.total_events;
+
+    document.getElementById(
+        "occupancy"
+    ).innerText =
+    metricsData.occupancy;
+
+    let health =
+    await fetch(
+        "http://127.0.0.1:8000/health"
+    );
+
+    let healthData =
+    await health.json();
+
+    document.getElementById(
+        "health"
+    ).innerText =
+    healthData.status;
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
